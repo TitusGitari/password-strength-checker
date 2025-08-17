@@ -1,0 +1,122 @@
+<!DOCTYPE html> <!-- Declare HTML5 doctype -->
+<html lang="en"> <!-- Set document language to English -->
+<head> <!-- Start of head for metadata and links -->
+  <meta charset="UTF-8"> <!-- Character encoding for the document -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Responsive scaling on mobile -->
+  <title>Password Strength Checker</title> <!-- Browser tab title -->
+  <link rel="stylesheet" href="style.css"> <!-- Link to external CSS file -->
+</head> <!-- End of head -->
+<body> <!-- Start of page body -->
+
+  <!-- Container that centers the card -->
+  <div class="wrap"> <!-- Wrapper for layout centering -->
+    <!-- Simple card UI -->
+    <div class="card"> <!-- Visual card to hold the form -->
+      <h1>Password Strength Checker</h1> <!-- Header title for the page -->
+
+      <!-- Input row for password -->
+      <label for="pwd">Enter Password</label> <!-- Label for accessibility -->
+      <input id="pwd" type="password" placeholder="Type your password..." /> <!-- Password field -->
+
+      <!-- Toggle to show/hide password -->
+      <label class="show-row"> <!-- Row for the show-password toggle -->
+        <input id="show" type="checkbox" /> <!-- Checkbox to toggle visibility -->
+        <span>Show password</span> <!-- Text next to the checkbox -->
+      </label> <!-- End toggle row -->
+
+      <!-- Strength meter bar -->
+      <div class="meter"> <!-- Container for visual strength bar -->
+        <div id="bar" class="bar"></div> <!-- The filling bar that changes width/color -->
+      </div> <!-- End meter -->
+
+      <!-- Result text -->
+      <div id="result" class="result">Start typing to check strength…</div> <!-- Output area for rating text -->
+
+      <!-- Suggestions list -->
+      <ul id="tips" class="tips"></ul> <!-- Unordered list to show suggestions dynamically -->
+    </div> <!-- End card -->
+  </div> <!-- End wrap -->
+
+  <!-- Inline JavaScript for interactivity -->
+  <script>
+    // Grab DOM elements once so we can reuse references
+    const pwdInput = document.getElementById('pwd'); // Reference to the password input
+    const showToggle = document.getElementById('show'); // Reference to the show password checkbox
+    const bar = document.getElementById('bar'); // Reference to the meter bar fill div
+    const result = document.getElementById('result'); // Reference to the text result element
+    const tips = document.getElementById('tips'); // Reference to the suggestions list
+
+    // Regex rules mirroring the Python logic
+    const upperRe = /[A-Z]/; // Pattern to detect uppercase letters
+    const lowerRe = /[a-z]/; // Pattern to detect lowercase letters
+    const digitRe = /\d/; // Pattern to detect digits
+    const specialRe = /[^A-Za-z0-9]/; // Pattern to detect special characters
+
+    // Evaluate the password and return an object similar to the Python function
+    function evaluate(password) { // Define evaluation function for client-side checks
+      const length8 = password.length >= 8; // Boolean for length >= 8
+      const length12 = password.length >= 12; // Boolean for length >= 12
+      const hasUpper = upperRe.test(password); // Boolean for any uppercase
+      const hasLower = lowerRe.test(password); // Boolean for any lowercase
+      const hasDigit = digitRe.test(password); // Boolean for any digit
+      const hasSpecial = specialRe.test(password); // Boolean for any special char
+
+      const coreRulesMet = [length8, hasUpper, hasLower, hasDigit, hasSpecial] // Array of core booleans
+        .filter(Boolean).length; // Count how many are true
+
+      let score = coreRulesMet; // Start score from core count
+      if (length12) score += 1; // Add 1 bonus point if length >= 12
+
+      let rating = 'Weak'; // Default rating is Weak
+      if (score >= 5) rating = 'Strong'; // Strong if score >= 5
+      else if (coreRulesMet >= 3) rating = 'Medium'; // Medium if at least 3 core rules
+
+      const suggestions = []; // Initialize suggestions array
+      if (!length8) suggestions.push('Use at least 8 characters.'); // Suggest minimum length
+      if (!length12) suggestions.push('Aim for 12+ characters for stronger security.'); // Suggest 12+ length
+      if (!hasUpper) suggestions.push('Add uppercase letters (A–Z).'); // Suggest uppercase
+      if (!hasLower) suggestions.push('Add lowercase letters (a–z).'); // Suggest lowercase
+      if (!hasDigit) suggestions.push('Include numbers (0–9).'); // Suggest digits
+      if (!hasSpecial) suggestions.push('Include special characters (e.g., ! @ # $ % ^ & *).'); // Suggest special
+      const common = ['password','letmein','qwerty','123456','12345678','iloveyou']; // Common weak passwords
+      if (password && common.includes(password.toLowerCase())) suggestions.push('Avoid common or easily guessed passwords.'); // Warn about common passwords
+
+      return { rating, score, length: password.length, coreRulesMet, suggestions }; // Return structured result
+    }
+
+    // Update UI (meter + text + tips) based on evaluation
+    function render(info) { // Render function takes evaluation info object
+      // Decide bar width and color by rating
+      let width = '0%'; // Default bar width at 0%
+      let cls = 'weak'; // Default bar color class
+
+      if (info.rating === 'Weak') { width = '33%'; cls = 'weak'; } // Weak state
+      if (info.rating === 'Medium') { width = '66%'; cls = 'medium'; } // Medium state
+      if (info.rating === 'Strong') { width = '100%'; cls = 'strong'; } // Strong state
+
+      bar.style.width = width; // Apply width to the meter bar
+      bar.className = `bar ${cls}`; // Apply color class to bar
+
+      result.textContent = `${info.rating} (length ${info.length}, score ${info.score})`; // Update rating text
+
+      tips.innerHTML = ''; // Clear current suggestions
+      info.suggestions.forEach(s => { // Loop through suggestions
+        const li = document.createElement('li'); // Create a list item
+        li.textContent = s; // Set list item text
+        tips.appendChild(li); // Append to the suggestions list
+      }); // End suggestions loop
+    }
+
+    // Live update as the user types
+    pwdInput.addEventListener('input', () => { // Listen for typing in password input
+      const info = evaluate(pwdInput.value); // Evaluate current value
+      render(info); // Render results to UI
+    }); // End input listener
+
+    // Toggle password visibility
+    showToggle.addEventListener('change', () => { // Listen for checkbox state changes
+      pwdInput.type = showToggle.checked ? 'text' : 'password'; // Switch input type based on checkbox
+    }); // End change listener
+  </script> <!-- End inline script -->
+</body> <!-- End of page body -->
+</html> <!-- End of HTML document -->
